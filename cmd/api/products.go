@@ -21,5 +21,6 @@ func (app *application) getProducts(w http.ResponseWriter, r *http.Request) {
 		ErrorJSON(w, err, http.StatusInternalServerError)
 		return
 	}
+	app.cache.Set(r.Context(), Products)
 	WriteJSON(w, http.StatusOK, Products)
 }
