@@ -2,24 +2,17 @@ package cache
 
 import (
 	"context"
-	"encoding/json"
 	"log/slog"
 
 	"github.com/redis/go-redis/v9"
-	"github.com/theluminousartemis/caching-proxy/internal/models"
 )
 
 type redisCache struct {
 	rdb *redis.Client
 }
 
-func (rc *redisCache) Set(ctx context.Context, value any) error {
-	json, err := json.Marshal(value)
-	if err != nil {
-		slog.Error("Failed to marshal value", "error", err)
-		return err
-	}
-	err = rc.rdb.Set(ctx, key, json, TTL).Err()
+func (rc *redisCache) Set(ctx context.Context, key string, value any) error {
+	err := rc.rdb.Set(ctx, key, value, TTL).Err()
 	if err != nil {
 		slog.Error("Failed to set value in cache", "error", err)
 		return err
@@ -27,20 +20,21 @@ func (rc *redisCache) Set(ctx context.Context, value any) error {
 	return nil
 }
 
-func (rc *redisCache) Get(ctx context.Context, key string) (*models.Products, error) {
-	cacheResp := rc.rdb.Get(ctx, key)
-	if cacheResp.Err() != nil {
-		slog.Error("Failed to get value from cache", "error", cacheResp.Err())
-		return nil, cacheResp.Err()
+func (rc *redisCache) Get(ctx context.Context, key string) ([]byte, error) {
+	data, err := rc.rdb.Get(ctx, key).Bytes()
+	if err == redis.Nil {
+		return nil, nil
 	}
-	var products models.Products
-	if err := json.Unmarshal([]byte(cacheResp.Val()), &products); err != nil {
-		slog.Error("Failed to unmarshal value", "error", err)
+	if err != nil {
 		return nil, err
 	}
-	return &products, nil
+	return data, nil
 }
 
-func (rc *redisCache) Del(ctx context.Context, key string) error {
-	return rc.rdb.Del(ctx, key).Err()
+func (rc *redisCache) Del(ctx context.Context) error {
+	err := rc.rdb.FlushDB(ctx).Err()
+	if err != nil {
+		return err
+	}
+	return nil
 }

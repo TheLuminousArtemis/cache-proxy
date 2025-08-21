@@ -36,7 +36,7 @@ func (app *application) mount() *chi.Mux {
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.URLFormat)
 	r.Get("/health", app.health)
-	r.Get("/products", app.getProducts)
+	r.Get("/", app.getContent)
 	return r
 }
 

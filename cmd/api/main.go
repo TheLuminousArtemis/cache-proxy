@@ -6,6 +6,7 @@ import (
 	"log"
 	"log/slog"
 	"os"
+	"regexp"
 
 	"github.com/redis/go-redis/v9"
 
@@ -14,8 +15,9 @@ import (
 )
 
 var (
-	port   string = "port"
-	origin string = "origin"
+	port       string = "port"
+	origin     string = "origin"
+	URLPattern string = `^(https?:\/\/)(www\.)?[a-zA-Z]{2,}(\.[a-zA-Z]{2,})(\.[a-zA-Z]{2,})?\/[a-zA-Z0-9]{2,}|((https?:\/\/)(www\.)?[a-zA-Z]{2,}(\.[a-zA-Z]{2,})(\.[a-zA-Z]{2,})?)|(https?:\/\/)(www\.)?[a-zA-Z0-9]{2,}\.[a-zA-Z0-9]{2,}\.[a-zA-Z0-9]{2,}(\.[a-zA-Z0-9]{2,})?$`
 )
 
 func main() {
@@ -28,6 +30,14 @@ func main() {
 	//logger
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{AddSource: true}))
 
+	//origin validation
+	matched, err := regexp.MatchString(URLPattern, *originFlag)
+	if err != nil || !matched {
+		logger.Error("Invalid origin", "origin", *originFlag)
+		*originFlag = "http://dummyjson.com/products"
+	}
+
+	//config
 	cfg := config{
 		Port:   *portFlag,
 		Origin: *originFlag,
