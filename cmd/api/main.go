@@ -22,6 +22,7 @@ func main() {
 	//flags
 	portFlag := flag.Int(port, 9090, "port where proxy server would start on")
 	originFlag := flag.String(origin, "http://dummyjson.com/products", "origin server where requests are forwarded to")
+	clearCacheFlag := flag.Bool("clear-cache", false, "clear cache")
 	flag.Parse()
 
 	//logger
@@ -35,6 +36,7 @@ func main() {
 			password: env.GetString("REDIS_PASSWORD", ""),
 			db:       env.GetInt("REDIS_DB", 0),
 		},
+		clearCache: *clearCacheFlag,
 	}
 
 	//redis
@@ -57,6 +59,11 @@ func main() {
 		config: cfg,
 		logger: logger,
 		cache:  cache,
+	}
+
+	if app.config.clearCache {
+		app.clearCache()
+		return
 	}
 
 	if err := app.start(app.mount()); err != nil {

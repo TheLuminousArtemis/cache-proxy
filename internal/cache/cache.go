@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/redis/go-redis/v9"
+	"github.com/theluminousartemis/caching-proxy/internal/models"
 )
 
 var (
@@ -14,7 +15,8 @@ var (
 
 type Cache interface {
 	Set(ctx context.Context, value any) error
-	Get(ctx context.Context, key string) (any, error)
+	Get(ctx context.Context, key string) (*models.Products, error)
+	Del(ctx context.Context, key string) error
 }
 
 func NewRedisConfig(rdb *redis.Client) Cache {

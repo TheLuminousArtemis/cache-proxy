@@ -11,9 +11,10 @@ import (
 )
 
 type config struct {
-	Port     int
-	Origin   string
-	redisCfg redisConfig
+	Port       int
+	Origin     string
+	redisCfg   redisConfig
+	clearCache bool
 }
 
 type redisConfig struct {

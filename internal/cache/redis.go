@@ -6,6 +6,7 @@ import (
 	"log/slog"
 
 	"github.com/redis/go-redis/v9"
+	"github.com/theluminousartemis/caching-proxy/internal/models"
 )
 
 type redisCache struct {
@@ -26,6 +27,20 @@ func (rc *redisCache) Set(ctx context.Context, value any) error {
 	return nil
 }
 
-func (rc *redisCache) Get(ctx context.Context, key string) (any, error) {
-	return rc.rdb.Get(ctx, key).Result()
+func (rc *redisCache) Get(ctx context.Context, key string) (*models.Products, error) {
+	cacheResp := rc.rdb.Get(ctx, key)
+	if cacheResp.Err() != nil {
+		slog.Error("Failed to get value from cache", "error", cacheResp.Err())
+		return nil, cacheResp.Err()
+	}
+	var products models.Products
+	if err := json.Unmarshal([]byte(cacheResp.Val()), &products); err != nil {
+		slog.Error("Failed to unmarshal value", "error", err)
+		return nil, err
+	}
+	return &products, nil
+}
+
+func (rc *redisCache) Del(ctx context.Context, key string) error {
+	return rc.rdb.Del(ctx, key).Err()
 }
